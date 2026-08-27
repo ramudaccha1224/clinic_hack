@@ -1,0 +1,1014 @@
+<title>IDB矯正事業シミュレーション</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#F2F5F6;
+    --surface:#FFFFFF;
+    --surface-alt:#E7ECEE;
+    --border:#D5DCDF;
+    --ink:#16202A;
+    --ink-soft:#576771;
+    --ink-faint:#8394A0;
+    --accent:#0E7C86;
+    --accent-strong:#075158;
+    --accent-soft:#E1F0F1;
+    --accent-ink:#053A3F;
+    --shadow: 0 1px 2px rgba(20,30,36,.04), 0 8px 24px -12px rgba(20,30,36,.12);
+    --radius: 10px;
+    --font-display:'Shippori Mincho', 'Hiragino Mincho ProN', serif;
+    --font-body:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;
+    --font-mono:'JetBrains Mono','Noto Sans JP',monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#10161A;
+      --surface:#161E23;
+      --surface-alt:#1D262C;
+      --border:#2B363D;
+      --ink:#E7EDEF;
+      --ink-soft:#9FB0B8;
+      --ink-faint:#6D7E87;
+      --accent:#3FBCC7;
+      --accent-strong:#7BDBE3;
+      --accent-soft:#173338;
+      --accent-ink:#BDF0F4;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 28px -14px rgba(0,0,0,.55);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#10161A;
+    --surface:#161E23;
+    --surface-alt:#1D262C;
+    --border:#2B363D;
+    --ink:#E7EDEF;
+    --ink-soft:#9FB0B8;
+    --ink-faint:#6D7E87;
+    --accent:#3FBCC7;
+    --accent-strong:#7BDBE3;
+    --accent-soft:#173338;
+    --accent-ink:#BDF0F4;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 28px -14px rgba(0,0,0,.55);
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+  }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--font-body);
+    font-size:15.5px;
+    line-height:1.8;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent-strong);}
+  .num{font-family:var(--font-mono); font-variant-numeric:tabular-nums; letter-spacing:-0.01em;}
+
+  .skip-link{position:absolute; left:-999px; top:0; background:var(--accent); color:#fff; padding:.6em 1em; z-index:100;}
+  .skip-link:focus{left:1rem; top:1rem;}
+
+  /* ---------- Layout shell ---------- */
+  .shell{display:flex; min-height:100vh;}
+  .sidebar{
+    width:272px; flex:none; position:sticky; top:0; align-self:flex-start;
+    height:100vh; overflow-y:auto;
+    background:var(--surface); border-right:1px solid var(--border);
+    padding:1.75rem 1.25rem 2rem;
+  }
+  .brand{
+    display:flex; align-items:baseline; gap:.5rem; margin-bottom:1.5rem;
+  }
+  .brand-mark{font-size:1.3rem;}
+  .brand-text{font-family:var(--font-display); font-size:1.02rem; font-weight:600; letter-spacing:.02em; line-height:1.3;}
+  .brand-sub{font-size:.68rem; color:var(--ink-faint); letter-spacing:.06em; margin-top:.15rem;}
+
+  .toc{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.15rem;}
+  .toc a{
+    display:flex; gap:.6rem; align-items:baseline; text-decoration:none; color:var(--ink-soft);
+    padding:.5rem .6rem; border-radius:8px; font-size:.865rem; transition:background .15s, color .15s;
+  }
+  .toc a .n{font-family:var(--font-mono); font-size:.72rem; color:var(--ink-faint); min-width:1.3em;}
+  .toc a:hover{background:var(--surface-alt); color:var(--ink);}
+  .toc a.active{background:var(--accent-soft); color:var(--accent-ink); font-weight:600;}
+  .toc a.active .n{color:var(--accent-strong);}
+
+  .sidebar-foot{margin-top:2rem; padding-top:1rem; border-top:1px solid var(--border); font-size:.72rem; color:var(--ink-faint); line-height:1.7;}
+
+  .nav-toggle{
+    display:none; position:fixed; top:.85rem; right:.85rem; z-index:60;
+    width:2.6rem; height:2.6rem; border-radius:50%; border:1px solid var(--border);
+    background:var(--surface); color:var(--ink); box-shadow:var(--shadow);
+    align-items:center; justify-content:center; font-size:1.1rem; cursor:pointer;
+  }
+
+  .content{flex:1; min-width:0;}
+
+  /* ---------- Cover ---------- */
+  .cover{
+    padding:4.5rem 4vw 3.25rem; max-width:920px; margin:0 auto;
+    border-bottom:1px solid var(--border);
+  }
+  .cover-eyebrow{font-size:.75rem; letter-spacing:.14em; color:var(--accent-strong); font-weight:600; text-transform:uppercase;}
+  .cover h1{
+    font-family:var(--font-display); font-weight:600; font-size:clamp(2rem, 4.2vw, 3.1rem);
+    line-height:1.28; margin:.6rem 0 1rem; text-wrap:balance;
+  }
+  .cover p.lede{font-size:1.02rem; color:var(--ink-soft); max-width:52ch; margin:0 0 2rem;}
+  .cover-meta{display:flex; flex-wrap:wrap; gap:.5rem 1.5rem; font-size:.82rem; color:var(--ink-faint); margin-bottom:2.25rem;}
+  .cover-meta b{color:var(--ink-soft); font-weight:600;}
+
+  .stat-row{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--border); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;}
+  .stat-tile{background:var(--surface); padding:1.1rem 1.2rem;}
+  .stat-tile .v{font-family:var(--font-mono); font-size:1.5rem; font-weight:600; color:var(--accent-strong); line-height:1.15;}
+  .stat-tile .v small{font-family:var(--font-body); font-size:.62em; font-weight:500; color:var(--ink-faint); margin-left:.15em;}
+  .stat-tile .l{font-size:.74rem; color:var(--ink-soft); margin-top:.35rem;}
+  @media (max-width:720px){.stat-row{grid-template-columns:repeat(2,1fr);}}
+
+  /* ---------- Sections ---------- */
+  section.doc{max-width:920px; margin:0 auto; padding:3.5rem 4vw 1rem; border-bottom:1px solid var(--border);}
+  section.doc:last-of-type{border-bottom:none; padding-bottom:5rem;}
+  .sec-eyebrow{font-family:var(--font-mono); font-size:.75rem; color:var(--accent-strong); letter-spacing:.08em; font-weight:600;}
+  .sec-eyebrow span{color:var(--ink-faint); font-weight:400;}
+  h2{font-family:var(--font-display); font-size:clamp(1.5rem,2.6vw,1.95rem); font-weight:600; margin:.4rem 0 1.6rem; text-wrap:balance;}
+  h3{font-family:var(--font-display); font-size:1.22rem; font-weight:600; margin:2.1rem 0 .9rem;}
+  h4{font-size:1rem; font-weight:700; margin:1.5rem 0 .6rem; color:var(--ink);}
+  p{margin:0 0 1rem; max-width:68ch;}
+  ul, ol{margin:0 0 1.2rem; padding-left:1.3rem;}
+  li{margin-bottom:.45rem; max-width:66ch;}
+  strong{font-weight:700;}
+  .subhead{font-size:.85rem; color:var(--ink-soft); margin:-1rem 0 1.4rem; max-width:66ch;}
+
+  .callout{
+    background:var(--surface-alt); border-left:3px solid var(--accent); border-radius:0 8px 8px 0;
+    padding:1rem 1.3rem; margin:1.3rem 0; font-size:.92rem; color:var(--ink-soft);
+  }
+  .callout b{color:var(--ink);}
+
+  /* ---------- Tables ---------- */
+  .table-wrap{overflow-x:auto; margin:1.2rem 0 1.8rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface);}
+  table{border-collapse:collapse; width:100%; font-size:.85rem; min-width:420px;}
+  thead th{
+    text-align:left; background:var(--surface-alt); color:var(--ink-soft); font-weight:600;
+    padding:.7rem .9rem; white-space:nowrap; font-size:.76rem; letter-spacing:.02em; border-bottom:1px solid var(--border);
+  }
+  tbody td{padding:.62rem .9rem; border-bottom:1px solid var(--border); color:var(--ink); vertical-align:top;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:var(--surface-alt);}
+  td.num, th.num{text-align:right; font-family:var(--font-mono);}
+  td.center{text-align:center;}
+  .table-title{font-size:.82rem; font-weight:700; color:var(--ink-soft); margin:1.6rem 0 -.4rem;}
+
+  /* ---------- Segment cards ---------- */
+  .seg-list{display:flex; flex-direction:column; gap:1rem; margin:1.5rem 0 2rem;}
+  .seg-card{border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); overflow:hidden;}
+  .seg-head{
+    display:flex; align-items:center; gap:.8rem; padding:1rem 1.3rem; cursor:pointer; user-select:none;
+    background:var(--surface);
+  }
+  .seg-num{
+    font-family:var(--font-mono); font-weight:600; color:var(--accent-strong); background:var(--accent-soft);
+    width:2.1rem; height:2.1rem; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.82rem; flex:none;
+  }
+  .seg-title{font-weight:700; font-size:.98rem;}
+  .seg-meta{font-size:.78rem; color:var(--ink-faint); margin-left:auto; display:flex; gap:1rem; white-space:nowrap;}
+  .seg-meta .num{color:var(--ink-soft);}
+  .seg-chevron{color:var(--ink-faint); transition:transform .2s; flex:none;}
+  .seg-card[open] .seg-chevron{transform:rotate(180deg);}
+  .seg-head::-webkit-details-marker{display:none;}
+  .seg-body{padding:0 1.3rem 1.3rem; border-top:1px solid var(--border);}
+  .seg-grid{display:grid; grid-template-columns:1fr 1fr; gap:1.3rem; margin-top:1rem;}
+  @media (max-width:640px){.seg-grid{grid-template-columns:1fr;} .seg-meta{display:none;}}
+  .seg-grid h5{margin:0 0 .4rem; font-size:.76rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint);}
+  .seg-grid p{font-size:.85rem; color:var(--ink-soft); margin:0;}
+  .seg-benefit{
+    margin-top:1rem; background:var(--accent-soft); border-radius:8px; padding:.85rem 1rem; font-size:.85rem; color:var(--accent-ink);
+  }
+  .seg-order{display:flex; flex-wrap:wrap; gap:.4rem 1.1rem; margin-top:.7rem; font-size:.78rem; color:var(--ink-soft);}
+  .seg-order b{color:var(--ink); font-family:var(--font-mono);}
+
+  /* ---------- Toggle ---------- */
+  .toggle-row{display:flex; align-items:center; gap:.8rem; margin:1.5rem 0 1.2rem;}
+  .toggle{display:inline-flex; background:var(--surface-alt); border:1px solid var(--border); border-radius:999px; padding:3px;}
+  .toggle button{
+    border:none; background:transparent; padding:.45rem 1.1rem; border-radius:999px; font-size:.82rem; font-weight:600;
+    color:var(--ink-soft); cursor:pointer; font-family:var(--font-body);
+  }
+  .toggle button.active{background:var(--accent); color:#fff;}
+  .toggle-label{font-size:.78rem; color:var(--ink-faint);}
+
+  .model-panel{display:none;}
+  .model-panel.active{display:block;}
+
+  /* ---------- Bars ---------- */
+  .bars{display:flex; flex-direction:column; gap:.85rem; margin:1.6rem 0 2rem;}
+  .bar-row{display:grid; grid-template-columns:112px 1fr auto; gap:.8rem; align-items:center; font-size:.82rem;}
+  .bar-row .label{color:var(--ink-soft);}
+  .bar-track{background:var(--surface-alt); border-radius:6px; height:1.15rem; overflow:hidden; border:1px solid var(--border);}
+  .bar-fill{height:100%; border-radius:6px 0 0 6px; background:var(--accent);}
+  .bar-fill.strong{background:var(--accent-strong);}
+  .bar-row .val{font-family:var(--font-mono); white-space:nowrap;}
+
+  /* ---------- Glossary ---------- */
+  .gloss-controls{display:flex; flex-wrap:wrap; gap:.6rem; align-items:center; margin:1.4rem 0 1.8rem; position:sticky; top:0; background:var(--bg); padding:.6rem 0; z-index:2;}
+  .gloss-search{
+    flex:1; min-width:180px; padding:.6rem .9rem; border-radius:8px; border:1px solid var(--border);
+    background:var(--surface); color:var(--ink); font-family:var(--font-body); font-size:.85rem;
+  }
+  .gloss-search:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
+  .chip{
+    border:1px solid var(--border); background:var(--surface); color:var(--ink-soft); padding:.4rem .85rem;
+    border-radius:999px; font-size:.76rem; cursor:pointer; font-family:var(--font-body);
+  }
+  .chip.active{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .gloss-grid{display:grid; grid-template-columns:1fr 1fr; gap:.9rem;}
+  @media (max-width:640px){.gloss-grid{grid-template-columns:1fr;}}
+  .term{border:1px solid var(--border); border-radius:9px; padding:.9rem 1.05rem; background:var(--surface);}
+  .term-name{font-weight:700; font-size:.92rem; display:flex; justify-content:space-between; gap:.5rem;}
+  .term-cat{font-size:.66rem; color:var(--accent-strong); background:var(--accent-soft); padding:.15rem .5rem; border-radius:999px; white-space:nowrap; align-self:flex-start;}
+  .term-def{font-size:.82rem; color:var(--ink-soft); margin-top:.4rem; line-height:1.65;}
+  .term.hidden{display:none;}
+  .gloss-empty{display:none; color:var(--ink-faint); font-size:.85rem; padding:2rem 0; text-align:center;}
+
+  /* ---------- Focus ---------- */
+  a:focus-visible, button:focus-visible, summary:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px;}
+
+  footer.doc-foot{max-width:920px; margin:0 auto; padding:2rem 4vw 4rem; font-size:.78rem; color:var(--ink-faint);}
+
+  @media (max-width:900px){
+    .nav-toggle{display:flex;}
+    .sidebar{
+      position:fixed; inset:0 20% 0 0; z-index:55; transform:translateX(-100%);
+      transition:transform .25s ease; box-shadow:var(--shadow);
+    }
+    .sidebar.open{transform:translateX(0);}
+    .shell{display:block;}
+  }
+</style>
+
+<div class="skip-link"><a href="#main">本文へ移動</a></div>
+<button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="sidebar" aria-label="目次を開閉">☰</button>
+
+<div class="shell">
+  <nav class="sidebar" id="sidebar" aria-label="目次">
+    <div class="brand">
+      <span class="brand-mark">🦷</span>
+      <div>
+        <div class="brand-text">IDB矯正事業<br>シミュレーション</div>
+      </div>
+    </div>
+    <ul class="toc">
+      <li><a href="#s1"><span class="n">01</span>事業概要</a></li>
+      <li><a href="#s2"><span class="n">02</span>矯正クリニック市場分析</a></li>
+      <li><a href="#s3"><span class="n">03</span>単価・LTV試算</a></li>
+      <li><a href="#s4"><span class="n">04</span>卸価格マスタ</a></li>
+      <li><a href="#s5"><span class="n">05</span>拡大・集客コスト</a></li>
+      <li><a href="#s6"><span class="n">06</span>財務シミュレーション</a></li>
+      <li><a href="#s7"><span class="n">07</span>用語定義マスタ</a></li>
+      <li><a href="#s8"><span class="n">08</span>業界背景・補足メモ</a></li>
+    </ul>
+    <div class="sidebar-foot">
+      出典：クリニックシミュレーション.xlsx（全10シート）<br>
+      韓国IDB×MOP矯正サービス 日本展開資料
+    </div>
+  </nav>
+
+  <main class="content" id="main">
+    <header class="cover">
+      <div class="cover-eyebrow">Business Simulation</div>
+      <h1>IDB×MOP矯正サービス<br>日本展開シミュレーション</h1>
+      <p class="lede">韓国発の間接装着法（IDB）×微小骨穿孔術（MOP）矯正サービスを日本の個人歯科クリニックへ導入する事業計画。市場分析・単価設計・獲得コスト・24ヶ月財務シミュレーションを一冊に集約。</p>
+      <div class="cover-meta"><span><b>対象市場：</b>国内個人歯科クリニック 52,000院</span><span><b>スキーム：</b>医院 → HACK → チェ先生</span></div>
+      <div class="stat-row">
+        <div class="stat-tile"><div class="v">6,000<small>億円</small></div><div class="l">国内歯科矯正市場規模</div></div>
+        <div class="stat-tile"><div class="v">2,400<small>億円</small></div><div class="l">うちマウスピース矯正市場</div></div>
+        <div class="stat-tile"><div class="v">66,283<small>院</small></div><div class="l">全国歯科医院数</div></div>
+        <div class="stat-tile"><div class="v">54,000<small>院</small></div><div class="l">うち個人経営</div></div>
+      </div>
+    </header>
+
+    <!-- ===================== 1. 事業概要 ===================== -->
+    <section class="doc" id="s1">
+      <div class="sec-eyebrow">01 <span>／ 事業概要</span></div>
+      <h2>事業概要</h2>
+
+      <h3>1.1　市場環境</h3>
+      <p>マウスピース矯正は日本で2006年頃から普及し始め、現在までに2,400億円規模の市場を形成した。流行の背景には「高精度スキャン（IOS）の普及」と「外せる・目立たない」というメリットが成人層に受容されたことがある。IDB施術ではこの層を直接獲得することはできないため、<strong>「患者が勝手に装置を外さない（固定式）」というニーズの掘り起こし</strong>が重要になる。</p>
+
+      <h3>1.2　サービス比較</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>比較項目</th><th>マウスピース矯正</th><th>従来ワイヤー矯正</th><th>IDB × MOP</th></tr></thead>
+          <tbody>
+            <tr><td>治療期間</td><td>2〜3年</td><td>2〜3年</td><td>8〜14ヶ月（半減）</td></tr>
+            <tr><td>難症例・抜歯対応</td><td>✕（限定的）</td><td>◯（対応可能）</td><td>◯（対応可能）</td></tr>
+            <tr><td>装置装着の手間</td><td>◎（渡すのみ）</td><td>✕（1時間以上の手作業）</td><td>◎（ジグで10分一括装着）</td></tr>
+            <tr><td>患者の自己管理</td><td>✕（サボりリスク大）</td><td>◎（固定式で安心）</td><td>◎（固定式で安心）</td></tr>
+            <tr><td>医師の時給換算利益</td><td>普通</td><td>低い</td><td>極めて高い</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>1.3　キャッシュポイント構造</h3>
+      <ul>
+        <li><strong>サービス利用料（卸価格）</strong>：施術1件あたりで歯科医院から受領。商品パッケージ（チェ先生への依頼・模型送付等）の卸価格。（契約クリニックからチェ先生への材料仕入れ分およびシステム導入費からのコミッションバックを含む）</li>
+        <li><strong>システム導入費（イニシャル）</strong>：スキャンデータのやり取り・依頼等を専用システム（会員ページ）経由で行わせるイニシャル費用。当社は請求作業等に利用。</li>
+        <li><strong>システム利用料（月額）</strong>：月額でのシステム保守・利用料。</li>
+        <li><strong>集客代行費用（月額オプション）</strong>：送客支援（ミニマムはMEO等での月額運用）。</li>
+      </ul>
+
+      <h3>1.4　ビジネススキームと立ち上げ方針</h3>
+      <ul>
+        <li><strong>スキーム：</strong>韓国から日本へサービスを輸入し、日本独自ブランドとして立ち上げる。</li>
+        <li><strong>ブランディング：</strong>各医院には独自の「ブランド」として販売することを許容（ブランド強化・FC業務管理のポジショニングを狙う）。</li>
+        <li><strong>商流：</strong>売上・資金の流れは【医院】→【HACK】→【チェ先生】。契約医院からの材料オーダー確認は双方アクセス可能なシステムで管理。</li>
+        <li><strong>提携条件：</strong>スタートセットや各種材料仕入れにおいてコミッション10%＋の契約を目指す。</li>
+      </ul>
+      <div class="callout">
+        <b>ビジネス上のメリット・拡張性</b><br>
+        To Cマーケティング主導のため医療法の抵触を受けにくい。患者の現場管理は各医院に任せられる。ベニヤ施術は通常6〜16本治療され、1本あたり18,000円の仕入れのため粗利が残りやすい。導入医院には集患用コンテンツ（SNS投稿ネタの1枚単位販売等）のコンサルティング追加費用を設定可能。
+      </div>
+    </section>
+
+    <!-- ===================== 2. 市場分析 ===================== -->
+    <section class="doc" id="s2">
+      <div class="sec-eyebrow">02 <span>／ 矯正クリニック分析</span></div>
+      <h2>矯正クリニック市場分析</h2>
+      <p class="subhead">全国個人歯科クリニック（52,000院）を「矯正メニューの有無」×「IOS（口腔内スキャナー）保有状況」で5セグメントに分類。</p>
+
+      <h3>2.1　セグメント別分布</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>セグメント</th><th class="num">構成比</th><th class="num">推定数</th><th class="num">IOS保有率</th><th class="num">IOS保有推定数</th><th class="num">月間症例数/院</th><th class="num">月間症例数/全体</th></tr></thead>
+          <tbody>
+            <tr><td>① 両方導入（矯正あり×IOS保有）</td><td class="num">17.5%</td><td class="num">9,100院</td><td class="num">55%</td><td class="num">5,005院</td><td class="num">30件</td><td class="num">150,150件</td></tr>
+            <tr><td>② ワイヤーのみ導入</td><td class="num">7.5%</td><td class="num">3,900院</td><td class="num">17.5%</td><td class="num">682.5院</td><td class="num">5件</td><td class="num">3,412.5件</td></tr>
+            <tr><td>③ マウスピースのみ（ガチ勢）</td><td class="num">8.0%</td><td class="num">4,160院</td><td class="num">35%</td><td class="num">1,456院</td><td class="num">15件</td><td class="num">21,840件</td></tr>
+            <tr><td>④ マウスピースのみ（ライト層）</td><td class="num">15.0%</td><td class="num">7,800院</td><td class="num">15%</td><td class="num">1,170院</td><td class="num">2件</td><td class="num">2,340件</td></tr>
+            <tr><td>⑤ いずれも導入していない</td><td class="num">52.5%</td><td class="num">27,300院</td><td class="num">2%</td><td class="num">546院</td><td class="num">0件</td><td class="num">0件</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>2.2　セグメント別 導入心理・増益インパクト・ターゲット評価</h3>
+      <div class="seg-list">
+
+        <details class="seg-card" open>
+          <summary class="seg-head">
+            <span class="seg-num">①</span>
+            <span class="seg-title">両方導入クリニック</span>
+            <span class="seg-meta">受注率 <span class="num">0.5%</span>／HACK取り分 <span class="num">6億円</span></span>
+            <span class="seg-chevron">▾</span>
+          </summary>
+          <div class="seg-body">
+            <p style="margin-top:1rem;"><strong>傾向：</strong>矯正治療に力を入れている。自費診療に対して積極的。先進的な治療に前向きな傾向。</p>
+            <div class="seg-grid">
+              <div>
+                <h5>導入する理由</h5>
+                <p>圧倒的なチェアタイム削減と回転率向上。装着作業が15〜30分に短縮され医院全体の生産性と粗利益が激増。「1年〜1年半で終わる」短期間訴求が強力な成約武器に。韓国高度技工による原価圧縮も魅力。</p>
+              </div>
+              <div>
+                <h5>導入しない理由</h5>
+                <p>「自分の手技と診断で十分」というプライド。過去の粗悪なJIGに対するトラウマ・不信感。</p>
+              </div>
+            </div>
+            <div class="seg-benefit"><strong>金銭的メリット（年間）：1,300万円増益</strong>　チェアタイム220分削減 × 年間240件（ワイヤー率66%）× 15,000円/時換算。加えて「治療可能だが2〜3年かかる」で逃していた患者を受注できるアップサイドあり。</div>
+            <div class="seg-order">
+              受注獲得試算
+              <span>受注率 <b class="num">0.5%</b></span>
+              <span>導入院数 <b class="num">25.03院</b></span>
+              <span>月間症例数（増加後） <b class="num">500.5件</b></span>
+              <span>年間売上 <b class="num">2,402,400,000円</b></span>
+              <span>HACK取り分(50%) <b class="num">600,600,000円</b></span>
+            </div>
+          </div>
+        </details>
+
+        <details class="seg-card">
+          <summary class="seg-head">
+            <span class="seg-num">②</span>
+            <span class="seg-title">ワイヤーのみ導入クリニック</span>
+            <span class="seg-meta">受注率 <span class="num">1.0%</span>／HACK取り分 <span class="num">0.5億円</span></span>
+            <span class="seg-chevron">▾</span>
+          </summary>
+          <div class="seg-body">
+            <p style="margin-top:1rem;"><strong>傾向：</strong>昔ながらの矯正専門医やベテラン医。</p>
+            <div class="seg-grid">
+              <div>
+                <h5>導入する理由</h5>
+                <p>肉体的負担・目の疲労の限界突破。正確なポジションを技工側で担保し15分で装着完了。視界の悪い裏側矯正（リンガル）のハードルが激減し、患者単価を120万〜150万円へ引き上げる好機に。</p>
+              </div>
+              <div>
+                <h5>導入しない理由</h5>
+                <p>「ダイレクト（手作業）こそが至高」という臨床哲学。マウスピースやデジタル化、韓国との遠隔連携スキームへの心理的ハードル。</p>
+              </div>
+            </div>
+            <div class="seg-benefit"><strong>金銭的メリット（年間）：930万円増益</strong>　チェアタイム削減で330万円＋追加受注（月1件）で600万円。「リンガルが良かった」「2〜3年はしんどい」ニーズを取り込む。</div>
+            <div class="seg-order">
+              受注獲得試算
+              <span>受注率 <b class="num">1.0%</b></span>
+              <span>導入院数 <b class="num">6.83院</b></span>
+              <span>月間症例数（増加後） <b class="num">40.95件</b></span>
+              <span>年間売上 <b class="num">196,560,000円</b></span>
+              <span>HACK取り分(50%) <b class="num">49,140,000円</b></span>
+            </div>
+          </div>
+        </details>
+
+        <details class="seg-card">
+          <summary class="seg-head">
+            <span class="seg-num">③</span>
+            <span class="seg-title">マウスピースのみ（ガチ勢）</span>
+            <span class="seg-meta">受注率 <span class="num">6.0%</span>／HACK取り分 <span class="num">5.2億円</span></span>
+            <span class="seg-chevron">▾</span>
+          </summary>
+          <div class="seg-body">
+            <p style="margin-top:1rem;"><strong>傾向：</strong>iTeroフル稼働。集客はWebマーケに特化し月間数十万〜数百万の広告費を投じている。</p>
+            <div class="seg-grid">
+              <div>
+                <h5>導入する理由</h5>
+                <p>骨格性の難症例・重度叢生など「取りこぼしていた難症例」を高単価なワイヤー＋MOPで残さず成約。手技不要なIDBだからこそ、既存スタッフや院長だけでワイヤー領域の売上を作れる。</p>
+              </div>
+              <div>
+                <h5>導入しない理由</h5>
+                <p>「ワイヤー＝患者から嫌がられる」という固定観念とブランディング（マウスピース専門）低下への懸念。装置外れ等の急患対応への恐怖。</p>
+              </div>
+            </div>
+            <div class="seg-benefit"><strong>金銭的メリット（年間）：1,800万円増益</strong>　難症例（全体の2〜3割）のうち3割を受注した場合、年間追加施術36件 × クリニック粗利50万円。</div>
+            <div class="seg-order">
+              受注獲得試算
+              <span>受注率 <b class="num">6.0%</b></span>
+              <span>導入院数 <b class="num">87.36院</b></span>
+              <span>月間症例数（増加後） <b class="num">436.8件</b></span>
+              <span>年間売上 <b class="num">2,096,640,000円</b></span>
+              <span>HACK取り分(50%) <b class="num">524,160,000円</b></span>
+            </div>
+          </div>
+        </details>
+
+        <details class="seg-card">
+          <summary class="seg-head">
+            <span class="seg-num">④</span>
+            <span class="seg-title">マウスピースのみ（ライト層）</span>
+            <span class="seg-meta">受注率 <span class="num">4.0%</span>／HACK取り分 <span class="num">2.8億円</span></span>
+            <span class="seg-chevron">▾</span>
+          </summary>
+          <div class="seg-body">
+            <p style="margin-top:1rem;"><strong>傾向：</strong>キレイライン等のFC加盟や定期券層への提案がメイン。難症例は断る。開業時の機器ディーラー（モリタ・サシンなど）の提案でとりあえずIOSは保有。</p>
+            <div class="seg-grid">
+              <div>
+                <h5>導入する理由</h5>
+                <p>チェ先生の「完全遠隔監修」による圧倒的な安心感。ワイヤー知識ゼロでも医療リスクなく高単価自費メニュー（100万〜120万円）を導入できる。年間3〜4件の受任で初期費用を完全回収できる明確なロジック。</p>
+              </div>
+              <div>
+                <h5>導入しない理由</h5>
+                <p>初期費200万円という絶対的な金額の壁。「自院に患者が来るのか」という集客面での不安。</p>
+              </div>
+            </div>
+            <div class="seg-benefit"><strong>金銭的メリット（年間）：600万円増益</strong>　難症例の追加受注に加え、マーケ支援で年間1,800万円の利益増の伸び代あり。非常に有力なターゲット。</div>
+            <div class="seg-order">
+              受注獲得試算
+              <span>受注率 <b class="num">4.0%</b></span>
+              <span>導入院数 <b class="num">46.8院</b></span>
+              <span>月間症例数（増加後） <b class="num">234.0件</b></span>
+              <span>年間売上 <b class="num">1,123,200,000円</b></span>
+              <span>HACK取り分(50%) <b class="num">280,800,000円</b></span>
+            </div>
+          </div>
+        </details>
+
+        <details class="seg-card">
+          <summary class="seg-head">
+            <span class="seg-num">⑤</span>
+            <span class="seg-title">いずれも導入していないクリニック</span>
+            <span class="seg-meta">受注率 <span class="num">0.2%</span>／HACK取り分 <span class="num">65万円</span></span>
+            <span class="seg-chevron">▾</span>
+          </summary>
+          <div class="seg-body">
+            <p style="margin-top:1rem;"><strong>傾向：</strong>IOS未導入・一般保険診療中心。</p>
+            <div class="seg-grid">
+              <div>
+                <h5>導入しない理由</h5>
+                <p>IOS等の高額機器が必要と誤解された瞬間の即時離脱。初期費用200万円に対する投資回収への強い不信感。スタッフの業務負荷増大と反発への恐れ。</p>
+              </div>
+              <div>
+                <h5>留意点</h5>
+                <p>IOS未導入院はターゲット外。リスト作成時にIOS保有院への限定が必須（未限定だと工数倒れする）。</p>
+              </div>
+            </div>
+            <div class="seg-benefit"><strong>金銭的メリット（年間）：300万円増益</strong>　IOS保有済みの一部院のみをターゲットとした場合の試算。</div>
+            <div class="seg-order">
+              受注獲得試算
+              <span>受注率 <b class="num">0.2%</b></span>
+              <span>導入院数 <b class="num">1.09院</b></span>
+              <span>月間症例数（増加後） <b class="num">0.55件</b></span>
+              <span>年間売上 <b class="num">2,620,800円</b></span>
+              <span>HACK取り分(50%) <b class="num">655,200円</b></span>
+            </div>
+          </div>
+        </details>
+
+      </div>
+    </section>
+
+    <!-- ===================== 3. LTV試算 ===================== -->
+    <section class="doc" id="s3">
+      <div class="sec-eyebrow">03 <span>／ LTV試算</span></div>
+      <h2>単価・LTV試算</h2>
+
+      <h3>3.1　1件あたり単価構造</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>項目</th><th>内容</th><th class="num">金額</th></tr></thead>
+          <tbody>
+            <tr><td>自費診療費</td><td>患者 → 歯科医院</td><td class="num">650,000円</td></tr>
+            <tr><td>サービス価格</td><td>歯科医院 → 当社</td><td class="num">205,200円</td></tr>
+            <tr><td>チェ先生</td><td>レベシェア</td><td class="num">102,600円</td></tr>
+            <tr><td>HACK＆恒川</td><td>レベシェア</td><td class="num">102,600円</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>3.2　料金体系</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>項目</th><th class="num">金額</th></tr></thead>
+          <tbody>
+            <tr><td>システム導入費（イニシャル）</td><td class="num">980,000円</td></tr>
+            <tr><td>スタートキット導入費（イニシャル）</td><td class="num">234,000円</td></tr>
+            <tr><td>システム保守料（月額）</td><td class="num">30,000円</td></tr>
+            <tr><td>集客代行費用（月額オプション）</td><td class="num">30,000円</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>3.3　試算用前提係数</h3>
+      <ul>
+        <li>導入院数：1,000院 ／ アクティブ率：80% ／ 1院あたり月間症例数：3件 ／ 集客代行利用率：15%</li>
+        <li>年間継続率：70% → 平均継続期間：26.28ヶ月</li>
+        <li>費用前提：システム構築費 0円（資産）／ 社内OP人件費 300,000円/人 ／ 営業人件費 400,000円/人 ／ システム保守費 200,000円</li>
+      </ul>
+
+      <h3>3.4　全体売上規模試算（1,000院導入時）</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>項目</th><th class="num">月間</th><th class="num">年間</th></tr></thead>
+          <tbody>
+            <tr><td>システム保守料</td><td class="num">30,000,000円</td><td class="num">360,000,000円</td></tr>
+            <tr><td>サービス代（卸）</td><td class="num">492,480,000円</td><td class="num">5,909,760,000円</td></tr>
+            <tr><td>集客代行</td><td class="num">4,500,000円</td><td class="num">54,000,000円</td></tr>
+            <tr><td><strong>合計売上</strong></td><td class="num"><strong>526,980,000円</strong></td><td class="num"><strong>6,323,760,000円</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>3.5　1院あたり3年LTV試算</h3>
+      <div class="stat-row" style="grid-template-columns:repeat(3,1fr); margin-bottom:1.6rem;">
+        <div class="stat-tile"><div class="v">15.06<small>百万円</small></div><div class="l">全体LTV（1院・3年）</div></div>
+        <div class="stat-tile"><div class="v">6.71<small>百万円</small></div><div class="l">チェ先生 LTV（3年）</div></div>
+        <div class="stat-tile"><div class="v">8.36<small>百万円</small></div><div class="l">HACK＆恒川 LTV（3年）</div></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>内訳</th><th class="num">全体LTV（1院）</th><th class="num">チェ先生LTV（3年）</th><th class="num">HACK＆恒川LTV（3年）</th></tr></thead>
+          <tbody>
+            <tr><td>システム保守</td><td class="num">788,400円</td><td class="num">ー</td><td class="num">788,400円</td></tr>
+            <tr><td>サービス代</td><td class="num">12,942,374円</td><td class="num">6,471,187円</td><td class="num">6,471,187円</td></tr>
+            <tr><td>集客代行</td><td class="num">118,260円</td><td class="num">ー</td><td class="num">118,260円</td></tr>
+            <tr><td>スタートキット</td><td class="num">234,000円</td><td class="num">234,000円</td><td class="num">ー</td></tr>
+            <tr><td>システム導入費</td><td class="num">980,000円</td><td class="num">ー</td><td class="num">980,000円</td></tr>
+            <tr><td><strong>合計</strong></td><td class="num"><strong>15,063,034円</strong></td><td class="num"><strong>6,705,187円</strong></td><td class="num"><strong>8,357,847円</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===================== 4. 卸価格 ===================== -->
+    <section class="doc" id="s4">
+      <div class="sec-eyebrow">04 <span>／ 卸価格イメージ</span></div>
+      <h2>卸価格マスタ＆症例別原価パッケージ</h2>
+
+      <h3>4.1　単体資材・施術別 卸価格表</h3>
+
+      <div class="table-title">基本パッケージ・セット</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>項目</th><th class="num">卸価格</th><th class="num">納期</th></tr></thead>
+          <tbody>
+            <tr><td>ハーフリンガルスタートセット</td><td class="num">118,020円</td><td class="num">21日</td></tr>
+            <tr><td>ラビアルスタートセット</td><td class="num">102,000円</td><td class="num">21日</td></tr>
+            <tr><td>診断料</td><td class="num">20,000円</td><td class="num">7〜14日</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-title">矯正技工</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>項目</th><th class="num">卸価格</th><th class="num">納期</th></tr></thead>
+          <tbody>
+            <tr><td>ラビアル矯正</td><td class="num">120,000円</td><td class="num">42日</td></tr>
+            <tr><td>ハーフリンガル矯正</td><td class="num">180,000円</td><td class="num">56日</td></tr>
+            <tr><td>フルリンガル矯正</td><td class="num">220,000円</td><td class="num">64日</td></tr>
+            <tr><td>MTA（インプラントアンカー関連技工）</td><td class="num">80,000円</td><td class="num">28日</td></tr>
+            <tr><td>MSE（上顎骨急速拡大装置）</td><td class="num">80,000円</td><td class="num">21日</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-title">保定装置・補助パーツ</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>項目</th><th class="num">卸価格</th><th class="num">納期</th></tr></thead>
+          <tbody>
+            <tr><td>クリアリテーナー</td><td class="num">18,000円</td><td class="num">21日</td></tr>
+            <tr><td>リムプレート＋リムスクリュー2本セット</td><td class="num">50,000円</td><td class="num">21日</td></tr>
+            <tr><td>固定式リテーナー</td><td class="num">5,500円</td><td class="num">23日</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-title">JIG（専用転写トレー）単体</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>項目</th><th class="num">卸価格</th><th class="num">納期</th></tr></thead>
+          <tbody>
+            <tr><td>ハーフリンガル用JIG　下6-7</td><td class="num">2,670円</td><td class="num">14日</td></tr>
+            <tr><td>ハーフリンガル用JIG　下1-5</td><td class="num">3,300円</td><td class="num">14日</td></tr>
+            <tr><td>ハーフリンガル用JIG　上1-6</td><td class="num">3,543円</td><td class="num">14日</td></tr>
+            <tr><td>ハーフリンガル用JIG　上7</td><td class="num">2,670円</td><td class="num">14日</td></tr>
+            <tr><td>ラビアル用JIG　上下6-7</td><td class="num">2,670円</td><td class="num">14日</td></tr>
+            <tr><td>ラビアル用JIG　上下1-5</td><td class="num">3,300円</td><td class="num">14日</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-title">ベニヤ関連技工</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>項目</th><th class="num">卸価格</th><th class="num">納期</th></tr></thead>
+          <tbody>
+            <tr><td>デンティンフォーム＋セッティングガイドセット</td><td class="num">84,000円</td><td class="num">21日</td></tr>
+            <tr><td>ベニヤ（1本あたり）</td><td class="num">18,000円</td><td class="num">21日</td></tr>
+            <tr><td>形成ガイド</td><td class="num">15,000円</td><td class="num">14日</td></tr>
+            <tr><td>歯肉形成ガイド</td><td class="num">15,000円</td><td class="num">14日</td></tr>
+            <tr><td>フルジルコニアクラウン</td><td class="num">15,000円</td><td class="num">7〜14日</td></tr>
+            <tr><td>フルE.maxクラウン</td><td class="num">18,000円</td><td class="num">7〜14日</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>4.2　症例別パッキング仕上がりイメージ・価格設定</h3>
+      <div class="table-title">卸価格 約20万円設定パターン</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>パターン</th><th class="num">定価</th><th class="num">原価折半</th><th class="num">希望価格</th></tr></thead>
+          <tbody>
+            <tr><td>ラビアル基本</td><td class="num">169,470円</td><td class="num">ー</td><td class="num">370,000円</td></tr>
+            <tr><td>ハーフリンガル基本</td><td class="num">235,683円</td><td class="num">ー</td><td class="num">450,000円</td></tr>
+            <tr><td>フルリンガル基本</td><td class="num">275,926円</td><td class="num">137,963円</td><td class="num">550,000円</td></tr>
+            <tr><td>ラビアル（MSE/全JIG含）</td><td class="num">380,860円</td><td class="num">ー</td><td class="num">ー</td></tr>
+            <tr><td>ハーフリンガル（MSE/全JIG含）</td><td class="num">445,036円</td><td class="num">222,518円</td><td class="num">ー</td></tr>
+            <tr><td>フルリンガル（MSE/全JIG含）</td><td class="num">393,500円</td><td class="num">196,750円</td><td class="num">ー</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-title">卸価格 約40万円設定パターン（乗せて約40万）</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>パターン</th><th class="num">定価</th></tr></thead>
+          <tbody>
+            <tr><td>ラビアル基本</td><td class="num">338,940円</td></tr>
+            <tr><td>ハーフリンガル基本</td><td class="num">471,366円</td></tr>
+            <tr><td>フルリンガル基本</td><td class="num">551,852円</td></tr>
+            <tr><td>ラビアルフルセット</td><td class="num">761,720円</td></tr>
+            <tr><td>ハーフリンガルフルセット</td><td class="num">890,072円</td></tr>
+            <tr><td>フルリンガルフルセット</td><td class="num">787,000円</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===================== 5. 集客コスト ===================== -->
+    <section class="doc" id="s5">
+      <div class="sec-eyebrow">05 <span>／ 拡大・集客コスト</span></div>
+      <h2>拡大・集客コスト試算</h2>
+      <p class="subhead">アプローチ手法（WEB広告 vs 電話アポ獲得）ごとの獲得単価（CPO）試算。</p>
+
+      <h3>5.1　ターゲットセグメント別 CPA/CPO 試算</h3>
+
+      <h4>★メインターゲット　IOS導入済み × マウスピースのみ（ガチ＆ライト：計2,626院）</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>チャネル</th><th>主要指標</th><th class="num">CPO（施策単体）</th><th class="num">合計CPO</th><th class="num">獲得数</th><th class="num">合計費用</th></tr></thead>
+          <tbody>
+            <tr><td>WEB広告</td><td>CPM 4,500円／CTR 0.8%／CPC 562.5円／CVR 2.1%／CPA 26,786円／接触率70%／面談発展率20%／成約率10%</td><td class="num">1,913,265円</td><td class="num">2,713,265円</td><td class="num">78.78院</td><td class="num">213,751,000円</td></tr>
+            <tr><td>TEL（アポ架電）</td><td>リスト2,626院／必要コール15,756回／所要3,501h／APO率20%／成約率10%</td><td class="num">470,000円</td><td class="num">1,070,000円</td><td class="num">52.52院</td><td class="num">56,196,400円</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:.82rem; color:var(--ink-faint); margin-top:-1rem;">※ 合計CPOは営業コスト（クロージング）400,000円＋契約事務コスト200,000円を加算。</p>
+
+      <h4>ガチ矯正クリニック＆ワイヤーのみクリニック　IOS導入済み（計5,688院）</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>チャネル</th><th class="num">合計CPO</th><th class="num">獲得数</th><th class="num">合計費用</th></tr></thead>
+          <tbody>
+            <tr><td>WEB広告</td><td class="num">4,626,531円</td><td class="num">21.33院</td><td class="num">98,683,900円</td></tr>
+            <tr><td>TEL（アポ架電）</td><td class="num">2,860,000円</td><td class="num">14.22院</td><td class="num">40,669,200円</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>矯正未対応クリニック　IOS導入済み（計546院）</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>チャネル</th><th class="num">合計CPO</th><th class="num">獲得数</th><th class="num">合計費用</th></tr></thead>
+          <tbody>
+            <tr><td>WEB広告</td><td class="num">5,902,041円</td><td class="num">2.05院</td><td class="num">12,084,430円</td></tr>
+            <tr><td>TEL（アポ架電）</td><td class="num">2,860,000円</td><td class="num">1.365院</td><td class="num">3,903,900円</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>5.2　全体獲得総計</h3>
+      <div class="stat-row" style="grid-template-columns:repeat(3,1fr); margin-bottom:1.6rem;">
+        <div class="stat-tile"><div class="v">170.26<small>院</small></div><div class="l">獲得数合計（WEB＋TEL）</div></div>
+        <div class="stat-tile"><div class="v">4.25<small>億円</small></div><div class="l">費用合計</div></div>
+        <div class="stat-tile"><div class="v">2.50<small>百万円</small></div><div class="l">全体平均CPO</div></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>チャネル</th><th class="num">獲得数合計</th><th class="num">費用合計</th><th class="num">平均CPO</th></tr></thead>
+          <tbody>
+            <tr><td>WEB</td><td class="num">102.16院</td><td class="num">324,519,400円</td><td class="num">3,176,657円</td></tr>
+            <tr><td>TEL</td><td class="num">68.11院</td><td class="num">100,769,500円</td><td class="num">1,479,620円</td></tr>
+            <tr><td><strong>総合計</strong></td><td class="num"><strong>170.26院</strong></td><td class="num"><strong>425,288,900円</strong></td><td class="num"><strong>2,497,842円</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===================== 6. 財務シミュレーション ===================== -->
+    <section class="doc" id="s6">
+      <div class="sec-eyebrow">06 <span>／ シミュサマリー</span></div>
+      <h2>24ヶ月財務シミュレーション＆サマリー</h2>
+      <p class="subhead">卸価格「20万円」モデルと「40万円」モデルを比較。下のトグルで切り替えて表示。</p>
+
+      <div class="toggle-row">
+        <div class="toggle" role="group" aria-label="卸価格モデル切替">
+          <button type="button" class="model-btn active" data-model="20">卸価格 約20万円</button>
+          <button type="button" class="model-btn" data-model="40">卸価格 約40万円</button>
+        </div>
+        <span class="toggle-label" id="modelHint">主に既存の矯正クリニック向け価格帯</span>
+      </div>
+
+      <div class="model-panel active" data-panel="20">
+        <h4>チェ先生</h4>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th></th><th class="num">0ヶ月目</th><th class="num">6ヶ月目</th><th class="num">12ヶ月目</th><th class="num">18ヶ月目</th><th class="num">24ヶ月目</th></tr></thead>
+            <tbody>
+              <tr><td>売上</td><td class="num">3,497,200円</td><td class="num">10,054,750円</td><td class="num">17,441,950円</td><td class="num">69,759,050円</td><td class="num">258,132,650円</td></tr>
+              <tr><td>粗利</td><td class="num">3,497,200円</td><td class="num">6,574,750円</td><td class="num">9,641,950円</td><td class="num">35,799,050円</td><td class="num">127,737,650円</td></tr>
+              <tr><td>粗利累計</td><td class="num">3,497,200円</td><td class="num">31,340,950円</td><td class="num">81,644,650円</td><td class="num">176,869,450円</td><td class="num"><strong>709,053,850円</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h4>HACK＆恒川</h4>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th></th><th class="num">0ヶ月目</th><th class="num">6ヶ月目</th><th class="num">12ヶ月目</th><th class="num">18ヶ月目</th><th class="num">24ヶ月目</th></tr></thead>
+            <tbody>
+              <tr><td>売上</td><td class="num">0円</td><td class="num">15,553,700円</td><td class="num">26,767,700円</td><td class="num">90,934,600円</td><td class="num">335,146,000円</td></tr>
+              <tr><td>粗利</td><td class="num">-29,444,000円</td><td class="num">4,830,435円</td><td class="num">15,594,435円</td><td class="num">83,121,335円</td><td class="num">327,107,735円</td></tr>
+              <tr><td>粗利累計</td><td class="num">-29,444,000円</td><td class="num">-10,089,565円</td><td class="num">56,387,043円</td><td class="num">269,540,551円</td><td class="num"><strong>1,571,640,959円</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="model-panel" data-panel="40">
+        <h4>チェ先生</h4>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th></th><th class="num">0ヶ月目</th><th class="num">6ヶ月目</th><th class="num">12ヶ月目</th><th class="num">18ヶ月目</th><th class="num">24ヶ月目</th></tr></thead>
+            <tbody>
+              <tr><td>売上</td><td class="num">1,998,400円</td><td class="num">11,892,650円</td><td class="num">19,279,850円</td><td class="num">91,305,050円</td><td class="num">366,478,250円</td></tr>
+              <tr><td>粗利</td><td class="num">0円</td><td class="num">9,612,650円</td><td class="num">14,359,850円</td><td class="num">67,185,050円</td><td class="num">266,608,250円</td></tr>
+              <tr><td>粗利累計</td><td class="num">0円</td><td class="num">42,471,150円</td><td class="num">116,642,250円</td><td class="num">290,324,550円</td><td class="num"><strong>1,358,176,050円</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h4>HACK＆恒川</h4>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th></th><th class="num">0ヶ月目</th><th class="num">6ヶ月目</th><th class="num">12ヶ月目</th><th class="num">18ヶ月目</th><th class="num">24ヶ月目</th></tr></thead>
+            <tbody>
+              <tr><td>売上</td><td class="num">0円</td><td class="num">15,523,900円</td><td class="num">27,774,700円</td><td class="num">124,760,500円</td><td class="num">504,769,300円</td></tr>
+              <tr><td>粗利</td><td class="num">-25,963,592円</td><td class="num">7,018,237円</td><td class="num">19,044,037円</td><td class="num">115,804,837円</td><td class="num">495,588,637円</td></tr>
+              <tr><td>粗利累計</td><td class="num">-25,963,592円</td><td class="num">5,541,155円</td><td class="num">89,920,876円</td><td class="num">371,249,396円</td><td class="num"><strong>2,307,211,716円</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <h3>24ヶ月目 粗利累計比較</h3>
+      <div class="bars">
+        <div class="bar-row"><span class="label">チェ先生（20万円）</span><div class="bar-track"><div class="bar-fill" style="width:30.7%;"></div></div><span class="val num">709,053,850円</span></div>
+        <div class="bar-row"><span class="label">チェ先生（40万円）</span><div class="bar-track"><div class="bar-fill" style="width:58.9%;"></div></div><span class="val num">1,358,176,050円</span></div>
+        <div class="bar-row"><span class="label">HACK＆恒川（20万円）</span><div class="bar-track"><div class="bar-fill strong" style="width:68.1%;"></div></div><span class="val num">1,571,640,959円</span></div>
+        <div class="bar-row"><span class="label">HACK＆恒川（40万円）</span><div class="bar-track"><div class="bar-fill strong" style="width:100%;"></div></div><span class="val num">2,307,211,716円</span></div>
+      </div>
+
+      <h3>6.2　コスト構造前提</h3>
+      <ul>
+        <li><strong>HACK固定初期コスト：</strong>WEB広告制作費 4,000,000円（200万×2本）＋ リスト作成費 3,544,000円（400円×8,860院）</li>
+        <li><strong>稼働率・施術件数推移：</strong>導入初期は稼働率80%、累計稼働院数が段階的に増加。1院あたり矯正施術件数は月3〜5件で推移。矯正導入6ヶ月後から「ベニヤ施術（矯正件数の20%）」が追加発生するシナリオを組み込み。</li>
+      </ul>
+      <div class="callout">月次の詳細（新規導入院数・施術件数・売上内訳・費用内訳・粗利）は「卸価格約20万円」「卸価格約40万円」の両シートに準備期間＋24ヶ月分の明細として構築されている。上表・上グラフはその主要チェックポイント（0/6/12/18/24ヶ月目）の抜粋。</div>
+    </section>
+
+    <!-- ===================== 7. 用語集 ===================== -->
+    <section class="doc" id="s7">
+      <div class="sec-eyebrow">07 <span>／ 用語集</span></div>
+      <h2>用語定義マスタ</h2>
+      <p class="subhead">資料内で使用される全33用語の完全定義マスタ。キーワード検索・カテゴリ絞込に対応。</p>
+
+      <div class="gloss-controls">
+        <input type="search" class="gloss-search" id="glossSearch" placeholder="用語・定義を検索…" aria-label="用語を検索">
+        <button class="chip active" data-filter="all">すべて</button>
+        <button class="chip" data-filter="治療技術">治療技術</button>
+        <button class="chip" data-filter="補助装置・保定装置">補助装置・保定装置</button>
+        <button class="chip" data-filter="主要プレイヤー">主要プレイヤー</button>
+        <button class="chip" data-filter="市場・ビジネス">市場・ビジネス</button>
+        <button class="chip" data-filter="設備・ツール">設備・ツール</button>
+      </div>
+
+      <div class="gloss-grid" id="glossGrid">
+        <div class="term" data-cat="治療技術"><div class="term-name">IDB（Indirect Bonding System）<span class="term-cat">治療技術</span></div><div class="term-def">間接装着法。模型や3Dデータ上でブラケットを位置決めし、専用トレー（JIG）で一括装着する手技。1時間以上の作業を15〜30分に短縮。</div></div>
+        <div class="term" data-cat="治療技術"><div class="term-name">JIG<span class="term-cat">治療技術</span></div><div class="term-def">IDBの際、ブラケットを正確な位置で保持し、患者の歯列に転写・固定するための専用トレー。チェ先生の技工体制で高精度なものを格安提供。</div></div>
+        <div class="term" data-cat="治療技術"><div class="term-name">MOP（Micro-Osteoperforation）<span class="term-cat">治療技術</span></div><div class="term-def">微小骨穿孔術。麻酔下で歯槽骨に極小の穴を開け、骨改造を活性化させて歯の移動速度を爆発的に早める手技。治療期間を3〜5割短縮。</div></div>
+        <div class="term" data-cat="治療技術"><div class="term-name">ダイレクトボンディング<span class="term-cat">治療技術</span></div><div class="term-def">IDBの対義語。ドクターが口の中を直接見ながら、ピンセット等で1本ずつブラケットを手作業で貼り付けていく従来の手法。</div></div>
+        <div class="term" data-cat="治療技術"><div class="term-name">フルリンガル矯正<span class="term-cat">治療技術</span></div><div class="term-def">裏側（舌側）矯正。外から見えないが手技の難易度が極めて高い。視界が悪い裏側でもJIGで一発装着できるため、IDBが最も真価を発揮する。</div></div>
+        <div class="term" data-cat="治療技術"><div class="term-name">ハーフリンガル矯正<span class="term-cat">治療技術</span></div><div class="term-def">見えやすい上顎には歯の裏側（リンガル）、下顎には表側（ラビアル）に装置をつけるハイブリッド方式。審美性とコストのバランスに優れる。</div></div>
+        <div class="term" data-cat="治療技術"><div class="term-name">ラビアル矯正<span class="term-cat">治療技術</span></div><div class="term-def">表側矯正。唇や頬に接する歯の表側にブラケットを装着する、最も伝統的で一般的なワイヤー矯正手法。</div></div>
+        <div class="term" data-cat="治療技術"><div class="term-name">IPR（Interproximal Reduction）<span class="term-cat">治療技術</span></div><div class="term-def">歯間削合（ディスキング）。歯を動かすスペースを作るため、ヤスリ等で歯のエナメル質側面を0.1〜0.5mm程度削る処置。</div></div>
+        <div class="term" data-cat="治療技術"><div class="term-name">パワーチェーン<span class="term-cat">治療技術</span></div><div class="term-def">ブラケット間に渡して装着する鎖状の医療用ゴム。歯と歯の間の隙間を引っ張って閉じる際などに使用。</div></div>
+        <div class="term" data-cat="治療技術"><div class="term-name">リファインメント<span class="term-cat">治療技術</span></div><div class="term-def">マウスピース矯正で当初の計画通りに歯が動かなかった際、再度スキャンして追加のマウスピースを作り直し計画を修正する工程。</div></div>
+
+        <div class="term" data-cat="補助装置・保定装置"><div class="term-name">MTA<span class="term-cat">補助装置</span></div><div class="term-def">矯正用の超小型スクリュー（インプラントアンカー）を歯槽骨に植立し、それを固定源として歯を正確に牽引・移動させる技工・補助装置システム。（歯科材料のMTAセメントとは異なる）</div></div>
+        <div class="term" data-cat="補助装置・保定装置"><div class="term-name">MSE<span class="term-cat">補助装置</span></div><div class="term-def">上顎骨急速拡大装置（MARPE）の一種。アンカースクリューを用いて骨自体を押し広げるため、成人の狭窄した上顎歯列弓の拡大に効果的。</div></div>
+        <div class="term" data-cat="補助装置・保定装置"><div class="term-name">クリアリテーナー<span class="term-cat">保定装置</span></div><div class="term-def">矯正治療終了後、動かした歯が元の位置に戻らないよう（後戻り防止）装着する、透明で目立ちにくいマウスピース型の保定装置。</div></div>
+        <div class="term" data-cat="補助装置・保定装置"><div class="term-name">固定式リテーナー<span class="term-cat">保定装置</span></div><div class="term-def">主に前歯の裏側に細いワイヤーを接着剤で直接固定するタイプの保定装置。取り外しの手間がなく、後戻りを確実に防止。</div></div>
+        <div class="term" data-cat="補助装置・保定装置"><div class="term-name">ベニヤ<span class="term-cat">ベニヤ</span></div><div class="term-def">歯の表面（エナメル質）を薄く削り、その上にセラミック製の薄片（シェル）を貼り付ける審美修復物。歯の色や形、軽度な隙間を短期間で改善（価格は1本あたり）。</div></div>
+
+        <div class="term" data-cat="主要プレイヤー"><div class="term-name">インビザライン<span class="term-cat">主要プレイヤー</span></div><div class="term-def">米国アライン社が提供する世界シェア最大の透明マウスピース矯正。日本のマウスピース市場を爆発拡大させたが、難症例への限界も指摘されている。</div></div>
+        <div class="term" data-cat="主要プレイヤー"><div class="term-name">キレイライン矯正<span class="term-cat">主要プレイヤー</span></div><div class="term-def">「初回2万円〜」等の低価格訴求とSNS広告（D2C）で若年層を獲得した国内ブランド。送患モデルで一般歯科のマウスピース参入を加速させた。</div></div>
+        <div class="term" data-cat="主要プレイヤー"><div class="term-name">Oh my teeth<span class="term-cat">主要プレイヤー</span></div><div class="term-def">「通院回数を最小限にする」をコンセプトに、LINE活用やD2Cモデルで若年層を獲得している新興のマウスピース矯正スタートアップ。</div></div>
+        <div class="term" data-cat="主要プレイヤー"><div class="term-name">モリタ<span class="term-cat">主要プレイヤー</span></div><div class="term-def">日本最大手の歯科医療機器・材料総合ディーラーおよびメーカー。全国の歯科医院に巨大な販売ネットワークと強い影響力を持つ。</div></div>
+        <div class="term" data-cat="主要プレイヤー"><div class="term-name">サシン<span class="term-cat">主要プレイヤー</span></div><div class="term-def">歯科医院に対して機械・資材の販売、メンテナンス、開業支援を行う地域密着型の歯科器械業者（ディーラー）。</div></div>
+        <div class="term" data-cat="主要プレイヤー"><div class="term-name">船井総合研究所<span class="term-cat">主要プレイヤー</span></div><div class="term-def">歯科医院向けの経営コンサルティングで国内トップクラスの企業。「自費率向上」「マウスピース導入パッケージ」等を全国に普及させた。</div></div>
+
+        <div class="term" data-cat="市場・ビジネス"><div class="term-name">1人経営クリニック<span class="term-cat">市場・ビジネス</span></div><div class="term-def">分院を展開せず、院長1名（＋スタッフ）で運営する個人歯科医院。全国の歯科医院の約7〜8割を占める最大のボリュームゾーン。</div></div>
+        <div class="term" data-cat="市場・ビジネス"><div class="term-name">GP（General Practitioner）<span class="term-cat">市場・ビジネス</span></div><div class="term-def">一般歯科医。専門医ではなく保険診療を中心に行う歯科医。未経験医パッケージ（遠隔監修＋IDB＋MOP）の主要ターゲット。</div></div>
+        <div class="term" data-cat="市場・ビジネス"><div class="term-name">矯正専門医<span class="term-cat">市場・ビジネス</span></div><div class="term-def">大学病院の矯正科出身など、矯正治療に関する専門的なトレーニングを数年間受けた歯科医師。</div></div>
+        <div class="term" data-cat="市場・ビジネス"><div class="term-name">チェアタイム<span class="term-cat">市場・ビジネス</span></div><div class="term-def">患者が診療台に座り、ドクターや衛生士が実際の施術・対応を行っている時間。削減することで医院の生産性向上と人件費削減に直結。</div></div>
+        <div class="term" data-cat="市場・ビジネス"><div class="term-name">遠隔監修<span class="term-cat">市場・ビジネス</span></div><div class="term-def">外部の専門医チームが、患者のデータをもとに治療計画（歯の動かし方）を策定・指示するリモートバックオフィスシステム。</div></div>
+
+        <div class="term" data-cat="設備・ツール"><div class="term-name">IOS（Intraoral Scanner）<span class="term-cat">設備・ツール</span></div><div class="term-def">口腔内スキャナー。小型カメラで口の中をスキャンし、リアルタイムで歯列の3Dデジタルデータを取得する装置。</div></div>
+        <div class="term" data-cat="設備・ツール"><div class="term-name">iTero<span class="term-cat">設備・ツール</span></div><div class="term-def">アライン社が製造・販売する口腔内スキャナー。インビザラインとの互換性が高く、日本の矯正市場において最大のシェアを誇る。</div></div>
+        <div class="term" data-cat="設備・ツール"><div class="term-name">3Shape TRIOS<span class="term-cat">設備・ツール</span></div><div class="term-def">デンマークの3Shape社が開発する高精度口腔内スキャナー。補綴から矯正まで汎用性が高く、デジタル志向の強いクリニックに人気。</div></div>
+        <div class="term" data-cat="設備・ツール"><div class="term-name">Primescan<span class="term-cat">設備・ツール</span></div><div class="term-def">シロナ社が開発する超高精度口腔内スキャナー。主にCEREC、インプラント、矯正分野で導入されている。</div></div>
+        <div class="term" data-cat="設備・ツール"><div class="term-name">STLデータ<span class="term-cat">設備・ツール</span></div><div class="term-def">3Dスキャナーで取得した歯列の3D形状データの標準ファイル形式。このデータをメール送信することで即時に韓国技工所へ発注が可能。</div></div>
+        <div class="term" data-cat="設備・ツール"><div class="term-name">印象採得<span class="term-cat">設備・ツール</span></div><div class="term-def">アルジネートやシリコンなどの印象材（粘土状の物質）を口に入れて噛ませ、物理的に歯型を取る従来の型取り手法。</div></div>
+        <div class="term" data-cat="設備・ツール"><div class="term-name">CAD/CAM<span class="term-cat">設備・ツール</span></div><div class="term-def">コンピュータ支援設計（CAD）と製造（CAM）の略。デジタルデータをもとにJIGやマウスピースをコンピュータ制御で設計・3Dプリントする技術。</div></div>
+      </div>
+      <div class="gloss-empty" id="glossEmpty">該当する用語が見つかりませんでした。</div>
+    </section>
+
+    <!-- ===================== 8. 補足メモ ===================== -->
+    <section class="doc" id="s8">
+      <div class="sec-eyebrow">08 <span>／ メモ</span></div>
+      <h2>業界背景・補足メモ</h2>
+      <p class="subhead">資料の背景理解およびプレゼン時に補足すべき重要メモ書き。</p>
+
+      <h3>8.1　マウスピース治療普及の歴史と構造変化</h3>
+      <ul>
+        <li><strong>2010年以前：</strong>マウスピース治療は物理的な型取りで行われており、全国でも600〜1,000院程度の参入にとどまっていた。</li>
+        <li><strong>普及の背景：</strong>iTeroなどの高精度3Dスキャナー（IOS）の普及に伴い、一気に10,000院以上へと市場が急拡大した。</li>
+      </ul>
+      <h4>一般医参入のメカニズム</h4>
+      <ul>
+        <li>単にスキャナーが普及しただけでなく、専門知識を持たない一般歯科医が矯正メニューを導入したことが拡大の主因。</li>
+        <li>初回1回のデータ採取（または型取り）だけで矯正完了までの全ステップのマウスピースを一括作成できる仕組みが確立された。</li>
+        <li>クリンチェック（3D治療シミュレーション）の視覚化により、患者への成約率が飛躍的に向上した。</li>
+      </ul>
+      <h4>スキル不要化</h4>
+      <ul>
+        <li>ワイヤー治療に必要な「長年の経験と勘」が不要となり、「スキャンしてデータを外部に送信するだけ」で完了。</li>
+        <li>ドクターは現場でマウスピースを渡すだけで自費売上を作れるようになり、知識のないGP（一般医）が一斉参入した。</li>
+      </ul>
+      <h4>集客モデルの変化</h4>
+      <ul>
+        <li>患者が自分で歯医者を選ぶ時代から、「集客企業が患者を集めて提携院に送り込む（送患モデル）」へシフトした。</li>
+        <li>「キレイライン」などが「目立たない」「初回2万円〜」といったキャッチコピーとSNS広告を武器に、20〜30代の顧客層を囲い込んだ。</li>
+      </ul>
+
+      <h3>8.2　マウスピース矯正の臨床的限界（難症例率）</h3>
+      <div class="callout">
+        <b>難症例の割合：20%〜30%</b><br>
+        骨格性反対咬合や重度叢生など、マウスピース矯正では治療不可能な難症例が全体の20%〜30%存在する。<br><br>
+        <b>本事業の参入価値：</b>この「マウスピースでは治せない20〜30%の難症例」に対し、手技の壁を無くした「IDB×MOP×チェ先生の遠隔監修」を提供することで、GPであっても取りこぼすことなく高単価で獲得・治療できる点に最大のビジネス価値がある。
+      </div>
+    </section>
+
+    <footer class="doc-foot">
+      出典：クリニックシミュレーション.xlsx（全10シート：事業概要／矯正クリニック分析／LTV試算／卸価格イメージ／拡大・集客コスト／シミュサマリー／卸価格約20万円／卸価格約40万円／用語集／メモ）
+    </footer>
+  </main>
+</div>
+
+<script>
+(function(){
+  // Mobile sidebar toggle
+  var toggle = document.getElementById('navToggle');
+  var sidebar = document.getElementById('sidebar');
+  toggle.addEventListener('click', function(){
+    var open = sidebar.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  document.querySelectorAll('.toc a').forEach(function(a){
+    a.addEventListener('click', function(){ sidebar.classList.remove('open'); toggle.setAttribute('aria-expanded','false'); });
+  });
+
+  // Scrollspy
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var map = {};
+  links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  var sections = Array.prototype.slice.call(document.querySelectorAll('section.doc'));
+  if ('IntersectionObserver' in window){
+    var obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        var link = map[entry.target.id];
+        if (!link) return;
+        if (entry.isIntersecting) {
+          links.forEach(function(l){ l.classList.remove('active'); });
+          link.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-15% 0px -70% 0px', threshold: 0 });
+    sections.forEach(function(s){ obs.observe(s); });
+  }
+
+  // Model toggle (section 6)
+  var modelBtns = document.querySelectorAll('.model-btn');
+  var panels = document.querySelectorAll('.model-panel');
+  var hint = document.getElementById('modelHint');
+  var hints = { '20':'主に既存の矯正クリニック向け価格帯', '40':'難症例・遠隔監修フルパッケージ向け価格帯' };
+  modelBtns.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var model = btn.getAttribute('data-model');
+      modelBtns.forEach(function(b){ b.classList.toggle('active', b === btn); });
+      panels.forEach(function(p){ p.classList.toggle('active', p.getAttribute('data-panel') === model); });
+      hint.textContent = hints[model];
+    });
+  });
+
+  // Glossary filter + search
+  var chips = document.querySelectorAll('.chip');
+  var terms = Array.prototype.slice.call(document.querySelectorAll('.term'));
+  var search = document.getElementById('glossSearch');
+  var empty = document.getElementById('glossEmpty');
+  var currentFilter = 'all';
+
+  function applyFilter(){
+    var q = search.value.trim().toLowerCase();
+    var visibleCount = 0;
+    terms.forEach(function(t){
+      var cat = t.getAttribute('data-cat');
+      var matchesCat = currentFilter === 'all' || cat === currentFilter;
+      var matchesQuery = !q || t.textContent.toLowerCase().indexOf(q) !== -1;
+      var show = matchesCat && matchesQuery;
+      t.classList.toggle('hidden', !show);
+      if (show) visibleCount++;
+    });
+    empty.style.display = visibleCount === 0 ? 'block' : 'none';
+  }
+
+  chips.forEach(function(chip){
+    chip.addEventListener('click', function(){
+      chips.forEach(function(c){ c.classList.remove('active'); });
+      chip.classList.add('active');
+      currentFilter = chip.getAttribute('data-filter');
+      applyFilter();
+    });
+  });
+  search.addEventListener('input', applyFilter);
+})();
+</script>
